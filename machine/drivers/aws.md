@@ -77,6 +77,7 @@ assigned to the instance if they are configured.
 -   `--amazonec2-device-name`: The root device name of the instance.
 -   `--amazonec2-root-size`: The root disk size of the instance (in GB).
 -   `--amazonec2-volume-type`: The Amazon EBS volume type to be attached to the instance.
+-   `--amazonec2-instance-storage`: Maps instance (ephemeral) storage devices to a device name on the instance. <device_number>:<device_name> (e.g. 0:/dev/sdm) The instance type must have instance storage.
 -   `--amazonec2-iam-instance-profile`: The AWS IAM role name to be used as the instance profile.
 -   `--amazonec2-ssh-user`: The SSH Login username, which must match the default SSH user set in the ami used.
 -   `--amazonec2-request-spot-instance`: Use spot instances.
@@ -108,6 +109,7 @@ assigned to the instance if they are configured.
 | `--amazonec2-device-name`                | `AWS_DEVICE_NAME`       | `/dev/sda1`      |
 | `--amazonec2-root-size`                  | `AWS_ROOT_SIZE`         | `16`             |
 | `--amazonec2-volume-type`                | `AWS_VOLUME_TYPE`       | `gp2`            |
+| `--amazonec2-instance-storage`           | -                       | -                |
 | `--amazonec2-iam-instance-profile`       | `AWS_INSTANCE_PROFILE`  | -                |
 | `--amazonec2-ssh-user`                   | `AWS_SSH_USER`          | `ubuntu`         |
 | `--amazonec2-request-spot-instance`      | -                       | `false`          |
@@ -183,3 +185,20 @@ The default SSH username for the default AMIs is `ubuntu`.
 You need to change the SSH username only if the custom AMI you use has a different SSH username.
 
 You can change the SSH username with the `--amazonec2-ssh-user` according to the AMI you selected with the `--amazonec2-ami`.
+
+## Connecting Instance (Ephemeral) Storage
+
+Several EC2 instance types provide one or more direct-attached storage devices that can
+be used to support I/O intensive operations. If you specify a supported instance type,
+you can attach these devices by providing one or more `--amazonec2-instance-storage <device_number>:<device_name>` options.
+
+`device_number` indicates the index of the instance storage device (`0` for the first drive, `1` for the second, etc.)
+
+`device_name` is the path of the block device where the drive will be attached (e.g. `/dev/sdm`, `/dev/xvdb`). `device_name` must start with either `/dev/sd` or `/dev/xvd` followed by
+any combination of lowercase letters.
+
+The root volume is typically attached to `/dev/xvda` so both `/dev/xvda` and `/dev/sda` should  not be used as device names. This option will not override block device mappings specified in your AMI.
+
+This example attaches all storage devices on an m3.xlarge instance:
+
+	$ docker-machine create --driver amazonec2 --amazonec2-access-key AKI******* --amazonec2-secret-key 8T93C********* --amazonec2-instance-type m3.xlarge --amazonec2-instance-storage 0:/dev/sdb --amazonec2-instance-storage 1:/dev/sdc
